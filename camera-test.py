@@ -9,7 +9,8 @@ class Camera:
         pass
     
     def read_frame(self):
-        img = cv2.imread('photos/2/14.jpg')
+        path = input("file name ?")
+        img = cv2.imread('photos/2/'+path)
         frame = cv2.flip(img, 0)
         self.width = frame.shape[1]
         self.height = frame.shape[0]
@@ -64,7 +65,7 @@ class Camera:
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(closed, connectivity=8)
 
         # Minimum area to consider (adjust based on your scenario)
-        min_area = 1000
+        min_area = 500
 
         # Loop through all detected components (skip background 0)
         for i in range(1, num_labels):
@@ -85,8 +86,8 @@ class Camera:
         frame_S = cv2.resize(frame, (960, 540))
 
         cv2.imshow('Frame', frame_S)
-        #cv2.imshow('R', mask_rS)
-        #cv2.imshow('G', mask_gS)
+        cv2.imshow('R', mask_rS)
+        cv2.imshow('G', mask_gS)
         cv2.imshow('Edges', canny_img)
         cv2.imshow('Contours', img_resize)
 
