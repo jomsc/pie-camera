@@ -1,13 +1,13 @@
 import cv2
 import os
 import numpy as np
+from picamera2 import Picamera2
 
 crop_height = 220
 number_of_rays = 50
 
 def sample_label(mask_r, mask_g, v, sample_radius, labels):
     color = 0 # 0 none, 1 red, 2 green, 3 car, 4 obstacle
-
     avg_r, avg_g = 0, 0
     for i in range(-sample_radius, sample_radius+1):
         for j in range(-sample_radius, sample_radius+1):
@@ -34,16 +34,22 @@ def sample_label(mask_r, mask_g, v, sample_radius, labels):
 
 class Camera:
     def __init__(self, width=854, height=480):
-        self.width = width
-        self.height = height
-        pass
+        self.picam2 = Picamera2()
+        
+        config = self.picam2.create_preview_configuration(
+            main={"size": (width, height)},
+            lores={"size": (width, height)}
+        )
+        self.picam2.configure(config)
+        
+        self.picam2.start()
     
     def read_frame(self):
-        #path = input("file name ?")
-        #img = cv2.imread('photos/2/'+path)
-        img = cv2.imread('photos/2/6.jpg')
-        frame = cv2.flip(img, 0)
-        frame = cv2.resize(frame, (self.width, self.height))
+        img = self.picam2.capture_array()
+        frame_d = cv2.flip(img, 0)
+        frame = cv2.flip(frame_d, 1)
+        self.width = frame.shape[1]
+        self.height = frame.shape[0]
         return frame
     
     def process_stream(self):
@@ -145,17 +151,11 @@ class Camera:
             
             cv2.rectangle(frame_disp, a, b, color, 1)
         
-        cv2.imshow('Frame', frame_disp)
-        #cv2.imshow('Edges', canny_img)
-
-        cv2.waitKey()
-        cv2.destroyAllWindows()
-        
 
         count_r = np.count_nonzero(mask_r)/(self.width*self.height) # POURCENTAGE DE LA COULEUR ROUGE
         count_g = np.count_nonzero(mask_g)/(self.width*self.height) # POURCENTAGE DE LA COULEUR VERTE
 
-        return avg_r, avg_g, count_r, count_g
+        return frame_disp, car_label
 
                               
                
@@ -165,10 +165,15 @@ class Camera:
 
 def main():
     camera = Camera()
-    avg_r, avg_g, count_r, count_g = camera.process_stream()
-    print(f"avg_r: {avg_r}, avg_g: {avg_g}, count_r: {count_r}, count_g: {count_g}")
+
+    while True:
+        frame_disp, car_label = camera.process_stream()
+
+        cv2.imshow('Frame', frame_disp)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
     
-   
+    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main()
