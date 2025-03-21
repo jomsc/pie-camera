@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 class Camera:
-    def __init__(self, width=1920, height=1080):
+    def __init__(self, width=854, height=480):
         self.width = width
         self.height = height
         pass
@@ -12,8 +12,7 @@ class Camera:
         path = input("file name ?")
         img = cv2.imread('photos/2/'+path)
         frame = cv2.flip(img, 0)
-        self.width = frame.shape[1]
-        self.height = frame.shape[0]
+        frame = cv2.resize(frame, (self.width, self.height))
         return frame
     
     def process_stream(self):

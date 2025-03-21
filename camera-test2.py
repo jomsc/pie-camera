@@ -4,7 +4,7 @@ import numpy as np
 from picamera2 import Picamera2
 
 class Camera:
-    def __init__(self, width=1920, height=1080):
+    def __init__(self, width=854, height=480):
         self.picam2 = Picamera2()
         
         config = self.picam2.create_preview_configuration(
