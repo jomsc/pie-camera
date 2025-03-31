@@ -9,6 +9,8 @@ from ultralytics import YOLO
 crop_factor = 0.46
 number_of_rays = 66
 
+MAX_MEMORY_DURATION = 10
+TRANSLATION_THRESHOLD = 10
 
 def color_detect(self, frame_hsv):
     red_lower = np.array([0, 50, 75])     # EN HSV, A AJUSTER POUR QUE LE MUR SOIT DETECTE
@@ -129,6 +131,10 @@ class Camera:
         self.height = height
         self.fromfile = False
         
+        self.car_list = [] # [x1, y1, x2, y2, vitesse (0 si non calculée), id, last_updated]
+        self.car_numbers = 0
+        self.iter_times = []
+
         weights_path = 'yolov5s.pt'
         self.model = YOLO(weights_path, task='detect')
         pass
@@ -155,7 +161,6 @@ class Camera:
         frame = frame[crop_height:, :, :]
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-
         # ----------------------------------------------------------------------
         # COLOR DETECTION
         # ----------------------------------------------------------------------
@@ -167,21 +172,69 @@ class Camera:
         car_label = car_detect(self.model, frame)
 
         # ----------------------------------------------------------------------
+        # RELATIVE SPEED
+        # ----------------------------------------------------------------------
+        if not self.car_list: # if list is empty and we detected cars, we add them
+            for v in car_label:
+                self.car_list.append([v[0], v[1],
+                                      v[2], v[3], 
+                                      0, self.car_numbers, 0])
+                self.car_numbers += 1 # on garde un id unique pour chaque voiture détectée
+
+        else: # we match each car to previous car
+            free = [i for i in range(0, self.car_list.size())]
+            for label in car_label:
+                if free:
+                    for i in free:
+                        car = self.car_list[i]
+                        if (abs(label[0]-car[0]) < TRANSLATION_THRESHOLD and 
+                            abs(label[1]-car[1]) < TRANSLATION_THRESHOLD and
+                            abs(label[2]-car[2]) < TRANSLATION_THRESHOLD and
+                            abs(label[3]-car[3]) < TRANSLATION_THRESHOLD): # car did not move much
+                            self.car_list[i][:4] = label[:4]
+                            self.car_list[i][6] = 0
+
+                            free.remove(i)
+                            # calcul velocitay 
+                
+                else:
+                    self.car_list.append([label[0], label[1],
+                                          label[2], label[3], 
+                                          0, self.car_numbers, 0])
+            
+            if free: # if there are free cars remaining, it means that some disappeared
+                for i in free:
+                    self.car_list[i][6] += 1
+                    if self.car_list[i][6] > MAX_MEMORY_DURATION:
+                        self.car_list.remove(self.car_list[i])
+
+
+        
+        
+        
+        # ----------------------------------------------------------------------
         # LIDAR POINT SAMPLING
         # ----------------------------------------------------------------------
         frame_disp = np.copy(frame)
         ray_pos, ray_labels, frame_disp = lidar_sampling(self, frame_disp, car_label, mask_r, mask_g)
 
+
+
+
+
+
         # ----------------------------------------------------------------------
-        # FRAME TO DISPLAY
+        # FRAME DISPLAY
         # ----------------------------------------------------------------------
 
         frame_disp[:,:,2][mask_r>0] += 100
         frame_disp[:,:,1][mask_g>0] += 100
 
-        for v in car_label:
+        for v in self.car_list:
             cv2.rectangle(frame_disp, (v[0], v[1]), (v[2], v[3]), (255, 0, 0), 2)
-            cv2.putText(frame_disp, v[4], (v[2] + 10, v[3]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+            #cv2.putText(frame_disp, v[4], (v[2] + 10, v[3]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+
+
 
 
 
