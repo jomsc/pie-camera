@@ -48,6 +48,7 @@ class Camera:
         img = self.picam2.capture_array()
         frame_d = cv2.flip(img, 0)
         frame = cv2.flip(frame_d, 1)
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         self.width = frame.shape[1]
         self.height = frame.shape[0]
         return frame
