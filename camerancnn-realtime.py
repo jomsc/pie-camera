@@ -4,7 +4,7 @@ import torch
 import sys
 import os
 
-from ultralytics import YOLO
+from yolo_ncnn import YoloV5NCNN
 from picamera2 import Picamera2
 
 
@@ -60,9 +60,13 @@ def color_detect(self, frame_hsv):
 
     return avg_r, avg_g, count_r, count_g, mask_r, mask_g
 
-def car_detect(model, img, conf_thres=0.5):
+def car_detect(self, img, conf_thres=0.5):
     car_label = []
-    results = model(img)
+    
+    detections = self.detect_image(img)
+
+
+
     for r in results:
         boxes = r.boxes
         for box, conf, cls_id in zip(boxes.xyxy, boxes.conf, boxes.cls):
@@ -148,8 +152,8 @@ class Camera:
         self.car_numbers = 0
         self.iter_times = []
 
-        weights_path = 'yolov5n.pt'
-        self.model = YOLO(weights_path, task='detect')
+        detector = YoloV5NCNN(param_path="yolov5nu_ncnn_model/model.ncnn.param",
+                              bin_path="yolov5nu_ncnn_model/model.ncnn.bin")
         pass
     
     def read_frame(self):    
