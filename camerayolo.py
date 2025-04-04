@@ -148,7 +148,7 @@ class Camera:
         return frame
     
     
-    def process_stream(self, img, raw_lidar):
+    def w(self, img, raw_lidar):
         # ----------------------------------------------------------------------
         # GET IMAGE
         # ----------------------------------------------------------------------
