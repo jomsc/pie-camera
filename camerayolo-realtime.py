@@ -5,6 +5,8 @@ import sys
 import os
 
 from ultralytics import YOLO
+from picamera2 import Picamera2
+
 
 crop_factor = 0.46
 number_of_rays = 66
@@ -129,21 +131,31 @@ class Camera:
     def __init__(self, width=576, height=325):
         self.width = width
         self.height = height
+
+        self.picam2 = Picamera2()
+        
+        config = self.picam2.create_preview_configuration(
+            main={"size": (width, height)},
+            lores={"size": (width, height)}
+        )
+        self.picam2.configure(config)
+        self.picam2.start()
+
         self.fromfile = False
         
         self.car_list = [] # [x1, y1, x2, y2, vitesse (0 si non calculée), id, last_updated]
         self.car_numbers = 0
         self.iter_times = []
 
-        weights_path = 'yolov5s.pt'
+        weights_path = 'yolov5n.pt'
         self.model = YOLO(weights_path, task='detect')
         pass
     
-    def read_frame(self):
-        path = input("file name ?")
-        img = cv2.imread('photos/2/'+path)
-        #img = cv2.imread('photos/2/13.jpg')
-        frame = cv2.flip(img, 0)
+    def read_frame(self):    
+        img = self.picam2.capture_array()
+        frame_d = cv2.flip(img, 0)
+        frame = cv2.flip(frame_d, 1)
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         frame = cv2.resize(frame, (self.width, self.height))
         return frame
     
@@ -231,11 +243,24 @@ class Camera:
         frame_disp[:,:,1][mask_g>0] += 100
 
         for v in self.car_list:
+            label = "id : " + str(v[5])
             cv2.rectangle(frame_disp, (v[0], v[1]), (v[2], v[3]), (255, 0, 0), 2)
-            #cv2.putText(frame_disp, v[4], (v[2] + 10, v[3]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
-
-
-
-
+            cv2.putText(frame_disp, label, (v[2] + 10, v[3]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
         return ray_pos, ray_labels, frame_disp #, count_r, count_g, avg_r, avg_g
+    
+
+def main():
+    camera = Camera()
+
+    while True:
+        ray_pos, ray_labels, frame_disp = camera.process_stream()
+
+        cv2.imshow('Frame', frame_disp)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    
+    cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    main()
