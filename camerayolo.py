@@ -148,7 +148,7 @@ class Camera:
         return frame
     
     
-    def w(self, img, raw_lidar):
+    def process_stream(self, img):
         # ----------------------------------------------------------------------
         # GET IMAGE
         # ----------------------------------------------------------------------
@@ -182,7 +182,7 @@ class Camera:
                 self.car_numbers += 1 # on garde un id unique pour chaque voiture détectée
 
         else: # we match each car to previous car
-            free = [i for i in range(0, self.car_list.size())]
+            free = [i for i in range(0, len(self.car_list))]
             for label in car_label:
                 if free:
                     for i in free:
@@ -230,9 +230,9 @@ class Camera:
         frame_disp[:,:,2][mask_r>0] += 100
         frame_disp[:,:,1][mask_g>0] += 100
 
-        for v in self.car_list:
+        for v in car_label:
             cv2.rectangle(frame_disp, (v[0], v[1]), (v[2], v[3]), (255, 0, 0), 2)
-            #cv2.putText(frame_disp, v[4], (v[2] + 10, v[3]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+            cv2.putText(frame_disp, v[4], (v[2] + 10, v[3]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
 
 

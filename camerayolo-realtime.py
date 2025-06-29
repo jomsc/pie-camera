@@ -24,7 +24,7 @@ def color_detect(self, frame_hsv):
 
     green_lower = np.array([30, 70, 30])  # EN HSV, A AJUSTER POUR QUE LE MUR SOIT DETECTE
     green_upper = np.array([85, 255, 255])  # EN HSV, A AJUSTER POUR QUE LE MUR SOIT DETECTE
-    
+
     mask_r1 = cv2.inRange(frame_hsv, red_lower, red_upper)
     mask_r2 = cv2.inRange(frame_hsv, red_lower2, red_upper2)
     mask_r = mask_r1
@@ -184,11 +184,11 @@ class Camera:
         # ----------------------------------------------------------------------
         # RELATIVE SPEED
         # ----------------------------------------------------------------------
-        """if not self.car_list: # if list is empty and we detected cars, we add them
+        if not self.car_list: # if list is empty and we detected cars, we add them
             for v in car_label:
                 self.car_list.append([v[0], v[1],
                                       v[2], v[3], 
-                                      0, self.car_numbers, 0])
+                                      0, self.car_numbers, 0]) # x1, y1, x2, y2, vitesse, id, time
                 self.car_numbers += 1 # on garde un id unique pour chaque voiture détectée
 
         else: # we match each car to previous car
@@ -201,11 +201,14 @@ class Camera:
                             abs(label[1]-car[1]) < TRANSLATION_THRESHOLD and
                             abs(label[2]-car[2]) < TRANSLATION_THRESHOLD and
                             abs(label[3]-car[3]) < TRANSLATION_THRESHOLD): # car did not move much
-                            self.car_list[i][:4] = label[:4]
+                            self.car_list[i][0] = label[0]
+                            self.car_list[i][1] = label[1]
+                            self.car_list[i][2] = label[2]
+                            self.car_list[i][3] = label[3]
                             self.car_list[i][6] = 0
 
                             free.remove(i)
-                            # calcul velocitay 
+                                # calcul velocitay 
                 
                 else:
                     self.car_list.append([label[0], label[1],
@@ -218,7 +221,7 @@ class Camera:
                     if self.car_list[i][6] > MAX_MEMORY_DURATION:
                         self.car_list.remove(self.car_list[i])
 
-        """
+        
         
         
         
