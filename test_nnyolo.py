@@ -1,4 +1,4 @@
-from camerayolo import Camera
+from file_nnyolo import Camera
 import cv2
 import os
 import time
@@ -6,7 +6,7 @@ import time
 camera = Camera()
 camera.fromfile = False
 
-folder = 'photos/2/'
+folder = 'photos/' # path to dataset
 loop = True
 
 while loop:
